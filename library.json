@@ -1,0 +1,25 @@
+{
+  "name": "Easy MFRC522",
+  "version": "0.1.0",
+  "keywords": "rfid, spi",
+  "description": "This library is a wrapper to miguelbalboa/MFRC522. It controls a MFRC522 device to read/write RFID tags' contents either (1) as a simple file system, or (2) as a dictionary with key/values pairs.",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/pablo-sampaio/easy_mfrc522.git"
+  },
+  "authors":
+  [
+    {
+      "name": "Pablo Sampaio",
+      "email": "pablo.sampaio@ufrpe.br",
+      "maintainer": true
+    }
+  ],
+  "homepage": "https://github.com/pablo-sampaio/easy_mfrc522",
+  "dependencies": {
+    "miguelbalboa/MFRC522": "~1.4.8"
+  },
+  "frameworks": "arduino",
+  "platforms": "*"
+}

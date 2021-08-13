@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"platformio-ide.activateOnlyOnPlatformIOProject": true,
+		"platformio-ide.useBuiltinPIOCore": true,
+		"files.associations": {
+			"*.tcc": "cpp",
+			"array": "cpp",
+			"functional": "cpp",
+			"istream": "cpp",
+			"tuple": "cpp",
+			"utility": "cpp"
+		}
+	}
+}
