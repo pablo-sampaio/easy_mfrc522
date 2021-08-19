@@ -6,31 +6,32 @@
 
 /*** 
  * To understand this code, it is necessary to understand the internal architecture of 
- * Mifare Classic tags (or PICCs - Proximity Integrated Circuit Card). This code supports 
- * all Mifare Classic tags, but was tested only on Mifare Classic 1k!
+ * Mifare Classic tags (or PICCs - Proximity Integrated Circuit Cards). This code supports 
+ * all Mifare Classic tags (mini, 1K and 4K), but was tested only on Mifare Classic 1k!
  * 
- * The tag is divided into sectors and blocks. Most sectors have 4 blocks, but some sectors
- * in Mifare 4k have 16 blocks. The blocks are numbered sequentially starting in 1. Each 
- * block has 16 bytes. (In Mifare 1k, there are 64 blocks). The first block of the first 
- * sector contains the ID of the tag, normally a unique number written from factory.
+ * Each tag is divided into sectors and blocks. Most sectors have 4 blocks, but some sectors
+ * in Mifare 4k have 16 blocks. The blocks are numbered sequentially starting in 0 (in this
+ * library). Each block has 16 bytes. (In Mifare 1k, there are 64 blocks). In block #0
+ * (first block in the first sector) contains the ID of the tag, normally a unique number 
+ * written from factory.
  * 
  * To access the blocks of each sector, it is necessary to authenticate using two 
- * sector-specific keys, called key A and key B. The sector may be configured to use only
+ * sector-specific keys, called Key A and Key B. The sector may be configured to use only
  * one of the keys. These setttings, as well as other sector-specific flags are stored in
  * the fourth block of each sector. 
  * 
  * This library makes it easy to read and write arbitrary-length data, that may require 
- * multiple blocks and sectors.
+ * multiple blocks and sectors. 
  * 
  * This library assumes that:
  * - all sectors are authenticated with the same key A, without the need for key B,
- * - at most one tag/PICC is in the range of the MFRC522 antenna
+ * - at most one tag/PICC is in the range of the MFRC522 antenna, in anytime
  * - the user data is identified by a label (like a file name)
  */
 
 #define READ_WRITE_TRIALS 5
 
-//#define SHOW_DEBUG_MESSAGES 1  // uncomment this line to enable messages
+//#define SHOW_DEBUG_MESSAGES 1  // uncomment this line to enable messages output to the serial
 
 #ifdef SHOW_DEBUG_MESSAGES
   #define dbgPrintln(str) Serial.println(str)
@@ -82,20 +83,27 @@ void EasyMFRC522::setKeyA(byte keyA[6]) {
   }
 }
 
-bool EasyMFRC522::detectAndSelectMifareTag() {
-  if (! device.PICC_IsNewCardPresent()) // Look for new cards/tags
+bool EasyMFRC522::detectTag(byte outputTagId[4]) {
+  if (! device.PICC_IsNewCardPresent())
     return false;
 
-  if (! device.PICC_ReadCardSerial())  // Select one of the cards/tags
+  if (! device.PICC_ReadCardSerial())  //selects one of the cards/tags
       return false;
 
   MFRC522::PICC_Type piccType = device.PICC_GetType(device.uid.sak);
   
   // accepts only Mifare Classic protocol
-  // tested only on Mifare 1k !
   if (piccType == MFRC522::PICC_TYPE_MIFARE_MINI
 		    || piccType == MFRC522::PICC_TYPE_MIFARE_1K
 		    || piccType == MFRC522::PICC_TYPE_MIFARE_4K) {
+
+    // copies the tag's ID to the variable provided
+    if (outputTagId != NULL) {
+      for (int i = 0; i < 4; i ++) {
+        outputTagId[i] = this->device.uid.uidByte[i];
+      }
+    }
+
     return true;
   }
 
@@ -170,10 +178,7 @@ int EasyMFRC522::getUserDataSpace(int startBlock) {
 
 /**
  * Writes the given "data" array (with "dataSize" bytes) in the Mifare 1K tag, starting in "initialBlock" (or in the next one, if it is a 
- * trailer block) and successively writing to the next non-trailer block, until all data is written. 
- * Indeed, in the initial block itself, a identification of this data array is written, followed by the "dataSize". The identification is 
- * given by the fours bytes given in "dataId". You may choose any 4-byte sequence to identify your data, but the same data must be used
- * to retrieve the data with "readFromMifareTag()".
+ * trailer block or the block #0) and successively writing to the next non-trailer block, until all data is written. 
  * 
  * The tag must have been detected and selected by the MFRC522 sensor (e.g. using "detectAndSelectMifareTag()").
  * There is no need to authenticate in the tag prior to calling this function.
@@ -192,13 +197,15 @@ int EasyMFRC522::writeRaw(int initialBlock, byte* data, int dataSize) {
   bool sectorAuthenticated = false;
   
   while (bytesWritten < dataSize) {
-    if (currBlock % 4 == 3) {
-      dbgPrint("   - Trailer block (ignored): "); dbgPrintln(currBlock);
+    //TODO: this code is for Mifare 1k; adapt to other types
+    if (currBlock % 4 == 3 || currBlock == 0) {
+      dbgPrint("   - Ignored block: "); dbgPrintln(currBlock);
       currBlock ++;
       currSector ++;
       sectorAuthenticated = false; //because the sector changed
     }
 
+    //TODO: adapt to other types of tag
     if (currBlock > 63) {
       dbgPrint("Error writeToMifareTag() #5: not enough space");
       return -5;
@@ -295,8 +302,8 @@ bool EasyMFRC522::_verifyBlock(int blockAddr, byte* refData, byte startByte, byt
 } 
 
 /**
- * Reads the data starting in the given initial block, when it also checks if the data is properly identified with the given data id, 
- * then copies the data stored in the following blocks to "dataOutput". Returns the number of bytes read. 
+ * Reads the data starting in the given initial block, and with the given dataSize, then copies the data to "dataOutput". 
+ * Returns the number of bytes read. 
  * 
  * See more details in the comments to writeToMifareTag().
  * 
@@ -314,16 +321,18 @@ int EasyMFRC522::readRaw(int initialBlock, byte* dataOutput, int dataSize) {
  
   int currBlock = initialBlock;
   int currSector = currBlock / 4;
-  bool sectorAuthenticated = true; //authentication in this sector was already done in readSizeFromMifareTag()
+  bool sectorAuthenticated = false; 
   
-  while (bytesRead < (int)dataSize) {      
-    if (currBlock % 4 == 3) {
-      dbgPrint("   - Trailer block (ignored): "); dbgPrintln(currBlock);
+  while (bytesRead < dataSize) {      
+    //TODO: support other Mifare Classic tags
+    if (currBlock % 4 == 3) {  //attention: don't exclude block #0 here; excluded only in write operations
+      dbgPrint("   - Ignored block: "); dbgPrintln(currBlock);
       currBlock ++;
       currSector ++;
       sectorAuthenticated = false; //because the sector changed
     }
 
+    // TODO: adapt to other types of tags - this is specific of Mifare 1k !
     if (currBlock > 63) {
       dbgPrint("Error readFromMifareTag() #5: end of tag's memory reached");
       return -5;
@@ -346,20 +355,20 @@ int EasyMFRC522::readRaw(int initialBlock, byte* dataOutput, int dataSize) {
       sectorAuthenticated = true;
     }
 
-    bool success;
+    int code;
     int bytes = dataSize - bytesRead;
     bytes = (bytes < 16)? bytes : 16;
     
     for (int i = 0; i < READ_WRITE_TRIALS; i ++) {
-      success = _readBlock(currBlock, dataOutput, bytesRead, bytes);
-      if (success) {
+      code = _readBlock(currBlock, dataOutput, bytesRead, bytes);
+      if (code >= 0) { // success
         bytesRead += bytes;
         break;
       }
     }
-    if (!success) {
-      dbgPrint("Error readFromMifareTag() #7: could not read block "); dbgPrintln(currBlock);
-      return -7;
+    if (code < 0) {
+      //in this point, a message should have been printed by _readBlock()
+      return -10 + code;
     }
 
     currBlock ++;
@@ -368,37 +377,37 @@ int EasyMFRC522::readRaw(int initialBlock, byte* dataOutput, int dataSize) {
   return dataSize;
 }
 
-bool EasyMFRC522::_readBlock(int block, byte* destiny, byte firstIndex, byte bytesToRead) {
+int EasyMFRC522::_readBlock(int block, byte* destiny, byte firstIndex, byte bytesToRead) {
   MFRC522::StatusCode status;
   byte bufferSize = 18;
 
   status = device.MIFARE_Read(block, blockBuffer, &bufferSize);
   if (status != MFRC522::STATUS_OK) {
-    dbgPrint("Error readBlock() #1: could not read");
-    return false;
+    dbgPrint("Error readBlock() #1: could not read block ");  dbgPrintln(block);
+    return -1;
   }
 
   if (bytesToRead < 0 || bytesToRead > 16) {
     dbgPrint("Error readBlock() #2: invalid size");
-    return false;
+    return -2;
   }
 
   for (int i = 0; i < bytesToRead; i ++) {
     destiny[firstIndex + i] = blockBuffer[i];
   }
 
-  return true;
+  return 1;
 }
 
 
 //////////////////////////////////////////////////////
 ////////// READ/WRITE LABELED DATA (files) ///////////
 
-int EasyMFRC522::writeFile(const char dataLabel[12], byte* data, int dataSize, byte initialBlock) {
+int EasyMFRC522::writeFile(byte initialBlock, const char dataLabel[12], byte* data, int dataSize) {
   // prepares the buffer with the content for the initial block  
-  blockBuffer[0] = 0x1C; // ASCII FILE SEPARATOR (28 dec)
-  for (int i = 1; i <= 12; i ++) {
-    blockBuffer[i] = dataLabel[i];
+  blockBuffer[0] = 0x1C; // ASCII FILE SEPARATOR (=28 decimal)
+  for (int i = 0; i < 12; i ++) {
+    blockBuffer[i+1] = dataLabel[i];
     if (dataLabel[i] == '\0') {
       break;
     }
@@ -411,7 +420,7 @@ int EasyMFRC522::writeFile(const char dataLabel[12], byte* data, int dataSize, b
   blockBuffer[14] = byte(dataSize);
   blockBuffer[15] = byte(dataSize >> 8);
 
-  int lastBlock = this->writeRaw(initialBlock, blockBuffer, 16); // attention: don't write less than 16 bytes using the blockBuffer as source!
+  int lastBlock = this->writeRaw(initialBlock, blockBuffer, 16); // attention: NEVER write less than 16 bytes using the blockBuffer as source (to prevent name aliasing inside writeRaw())
   if (lastBlock < 0) {
     //the message should already have been printed by writeMultisector, so just return the error code
     return lastBlock; 
@@ -427,7 +436,7 @@ int EasyMFRC522::writeFile(const char dataLabel[12], byte* data, int dataSize, b
  * Returns: negative number -- error
  *          positive number -- the size of the data stored (starting from the next block, not counting trailling blocks)
  */
-int EasyMFRC522::readFileSize(const char dataLabel[12], int initialBlock) {
+int EasyMFRC522::readFileSize(int initialBlock, const char dataLabel[12]) {
   MFRC522::StatusCode status = MFRC522::STATUS_ERROR;
 
   if (initialBlock % 4 == 3) { //it is a trailer block --> go to the next one
@@ -465,12 +474,12 @@ int EasyMFRC522::readFileSize(const char dataLabel[12], int initialBlock) {
   
   // checks if all characters of the data label matches, including the final \0
   // if the label has more than 12 chars, only the first 12 chars are considered
-  for (int i = 1; i <= 12; i++) {
-    if (dataLabel[i] != blockBuffer[i]) {
+  for (int i = 0; i < 12; i++) {
+    if (dataLabel[i] != blockBuffer[i+1]) {
       dbgPrintln("Error #3: data label doesn't match");
       return -3;
     }
-    if (dataLabel[i] == '\0')  //in this situation, it is also true that blockBuffer[i] == '\0'
+    if (dataLabel[i] == '\0')  //in this situation, we have already confirmed that blockBuffer[i+1] == '\0' in the "if" above
       break;
   }
 
@@ -480,12 +489,12 @@ int EasyMFRC522::readFileSize(const char dataLabel[12], int initialBlock) {
   return dataSize;
 }
 
-int EasyMFRC522::readFile(const char dataLabel[12], byte* dataOut, int dataOutCapacity, byte initialBlock) {
-  if (initialBlock % 4 == 3) { //it is a trailer block --> go to the next (attention: this is done in readSizeFromMifareTag(), but should be kept here too, because of special cases, e.g. initialBlock = 3) and these functions are called successively)
+int EasyMFRC522::readFile(byte initialBlock, const char dataLabel[12], byte* dataOut, int dataOutCapacity) {
+  if (initialBlock % 4 == 3) { //it is a sector's trailing block --> go to the next (attention: this is done in readSizeFromMifareTag(), but should be kept here too, because of special cases, e.g. initialBlock = 3) and these functions are called successively)
     initialBlock ++;
   }
 
-  int dataSize = this->readFileSize(dataLabel, initialBlock);
+  int dataSize = this->readFileSize(initialBlock, dataLabel);
   if (dataSize < 0) {
     dbgPrintln("Error in readFromMifareTag() #1/#2/#3: initial block error");
     return dataSize; //errors -1 to -3

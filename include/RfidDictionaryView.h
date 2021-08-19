@@ -22,8 +22,9 @@
  *   .remove(key)     - removes the key-value entry; the entry is immediatelly removed 
  *                      from the RFID tag
  * 
- * Before using the operations above, you must stablish connection to a RFID tag in the 
- * range of the reader. Use:
+ * There's no intialization function (the MFRC522 is initialized automatically). 
+ * Before using the operations above, you must stablish connection to a RFID tag in
+ * the range of the reader. Use:
  * 
  *   detectTag()     - stablishes connection and loads all key-value entries
  *   disconnectTag() - disconnets and unloads the data
@@ -37,7 +38,7 @@
 class RfidDictionaryView { 
 private:
     EasyMFRC522* device;
-    int startBlock;      // Block where the dictionary starts 
+    int startBlock;      // Number of block where the dictionary starts 
     bool deleteDevice;   // Indicates whether the EasyMFRC522 must be deallocated by this class
 
     String *dictionary;  // Array used as a dictionary, alternating keys (in even indices) and values (odd indices)
@@ -52,8 +53,8 @@ public:
     RfidDictionaryView(EasyMFRC522* rfidDevice, int startBlock = 1, boolean autoDeallocateDevice = false);
     virtual ~RfidDictionaryView();
 
-    bool detectTag(byte user_tag_id[4] = NULL);
-    void disconnectTag(bool allow_redetection);
+    bool detectTag(byte outputTagId[4] = NULL);
+    void disconnectTag(bool allowRedetection = false);
 
     void set(const String& keyString, const String& valueString);
     String get(const String& keyString);

@@ -1,8 +1,8 @@
 {
   "name": "Easy MFRC522",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "keywords": "rfid, spi",
-  "description": "This library is a wrapper to miguelbalboa/MFRC522. It controls a MFRC522 device to read/write RFID tags' contents either (1) as a simple file system, or (2) as a dictionary with key/values pairs.",
+  "description": "This library controls a MFRC522 module, allowing you to read/write RFID tags' contents in a simplified way: (1) to load/store data chunks identified by labels (like a simple file system), or (2) as a dictionary with key/values pairs. It is a higher-level wrapper to the great library miguelbalboa/MFRC522.",
   "repository":
   {
     "type": "git",
@@ -11,15 +11,66 @@
   "authors":
   [
     {
-      "name": "Pablo Sampaio",
+      "name": "Pablo A. Sampaio",
       "email": "pablo.sampaio@ufrpe.br",
       "maintainer": true
     }
   ],
   "homepage": "https://github.com/pablo-sampaio/easy_mfrc522",
+  "examples": [
+    {
+        "name": "DictionaryView - Example 1",
+        "base": "examples/DictionaryView - Ex1",
+        "files": [
+            "DictionaryView - Ex1.cpp"
+        ]
+    },
+    {
+      "name": "DictionaryView - Example 2",
+      "base": "examples/DictionaryView - Ex2",
+      "files": [
+        "DictionaryView - Ex2.cpp"
+      ]
+    },
+    {
+      "name": "Labeled Data - Example 1",
+      "base": "examples/Labeled Data - Ex1",
+      "files": [
+        "Labeled Data - Ex1.cpp"
+      ]
+    },
+    {
+      "name": "Labeled Data - Example 2",
+      "base": "examples/Labeled Data - Ex2",
+      "files": [
+        "Labeled Data - Ex2.cpp"
+      ]
+    },
+    {
+      "name": "Unlabeled Data - Example 1",
+      "base": "examples/Unlabeled Data - Ex1",
+      "files": [
+        "Unlabeled Data - Ex1"
+      ]
+    },
+    {
+      "name": "Unlabeled Data - Example 2",
+      "base": "examples/Unlabeled Data - Ex2",
+      "files": [
+        "Unlabeled Data - Ex2"
+      ]
+    }
+  ],
   "dependencies": {
     "miguelbalboa/MFRC522": "~1.4.8"
   },
   "frameworks": "arduino",
-  "platforms": "*"
+  "platforms": ["atmelavr", "atmelsam", "espressif8266", "espressif32"],
+  "export": {
+    "exclude": [
+      "docs/",  
+      "andamento.txt",
+      ".gitignore"
+    ]
+  }
 }

@@ -66,7 +66,7 @@ void RfidDictionaryView::_read_dictionary()
   // subtracts 16 (1 block), which is the space used by EasyMFRC522 to store file information
   int spaceForDictInTag = getMaxSpaceInTag();
 
-  if (! this->device->existsFile("_rfiddict_", this->startBlock)) {
+  if (! this->device->existsFile(this->startBlock, "_rfiddict_")) {
     // in this case, it is considered loaded as an empty dictionary
     this->loaded = true; 
     // copies the uid of the current tag
@@ -80,7 +80,7 @@ void RfidDictionaryView::_read_dictionary()
   byte *buffer = new byte[spaceForDictInTag];
 
   // Lê e coloca as informações da tag no buffer
-  int result = this->device->readFile("_rfiddict_", buffer, spaceForDictInTag, this->startBlock);
+  int result = this->device->readFile(this->startBlock, "_rfiddict_", buffer, spaceForDictInTag);
   
   if (result < 0) {
     Serial.printf("Error: when reading the RFID tag, got %d\n", result);
@@ -153,7 +153,7 @@ void RfidDictionaryView::_write_dictionary()
   char *buffer = new char[stringSize + 1]; // adds +1 space for the '\0' that terminates the string (written by toCharArray)
   dictString.toCharArray(buffer, stringSize+1);
 
-  int result = this->device->writeFile("_rfiddict_", (byte*)buffer, stringSize, this->startBlock);
+  int result = this->device->writeFile(this->startBlock, "_rfiddict_", (byte*)buffer, stringSize);
   delete[] buffer;
 
   if (result <= 0) {
@@ -206,24 +206,18 @@ void RfidDictionaryView::_ensure_loaded()
  * But, once connected with this function, you may do any operations
  * of those classes.
  */
-bool RfidDictionaryView::detectTag(byte user_tag_id[4])
+bool RfidDictionaryView::detectTag(byte outputTagId[4])
 {
   // try at most twice
-  bool tag_detected = this->device->detectAndSelectMifareTag();
+  bool tag_detected = this->device->detectTag(outputTagId);
   if (!tag_detected) {
-    tag_detected = this->device->detectAndSelectMifareTag();
+    tag_detected = this->device->detectTag(outputTagId);
   }
 
   if (tag_detected) {
-    if (user_tag_id != NULL) {
-      MFRC522 *mfrc522 = this->device->getMFRC522();
-      for (int i = 0; i < 4; i ++) {
-        user_tag_id[i] = mfrc522->uid.uidByte[i];
-      }
-    }
     this->loaded = false;
-    //obs.: the field "tag_uid" will be loaded in _read_dict() which will be called 
-    //in the first call to an operation, because loaded is false
+    //obs.: this class' field "tag_uid" will be loaded in _read_dict(), which will be
+    //called in the first call to a public operation (because loaded is false)
   }
 
   return tag_detected;
@@ -235,9 +229,9 @@ bool RfidDictionaryView::detectTag(byte user_tag_id[4])
  * Known issue: you will need to physically move away (from the RFID reader), 
  * then back again, before connecting another time.
  */
-void RfidDictionaryView::disconnectTag(bool allow_redetection)
+void RfidDictionaryView::disconnectTag(bool allowRedetection)
 {
-  this->device->unselectMifareTag(allow_redetection);
+  this->device->unselectMifareTag(allowRedetection);
   this->loaded = false;
   this->size = 0;
 }

@@ -3,3 +3,5 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+EasyMFRC522-*.tar.gz
+docs/andamento.txt

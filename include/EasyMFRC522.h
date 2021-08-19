@@ -52,7 +52,7 @@ private:
     byte blockBuffer[18] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     bool _writeBlockAndVerify(int blockAddr, byte* data, int startIndex, int bytesToWrite);
-    bool _readBlock(int blockAddr, byte* destiny, byte firstIndex, byte bytesToRead);
+    int _readBlock(int blockAddr, byte* destiny, byte firstIndex, byte bytesToRead);
     bool _verifyBlock(int blockAddr, byte* refData, byte startByte, byte bytesToCheck);
 
 public:
@@ -72,7 +72,7 @@ public:
     }
 
     // detection of tags
-    bool detectAndSelectMifareTag();
+    bool detectTag(byte outputTagId[4] = NULL);
 
     // parameter indicates if the same tag should be detectable immediately
     // again (withou having to move away and back again)
@@ -80,9 +80,10 @@ public:
 
     int getUserDataSpace(int startBlock = 0);
 
-    /* Functions that read/write labeled (named) data to the tags, where the
-     * "data names" are somewhat similar to "file names" and must be used to retrieve
-     * the size of the data (with readSize()) or the whole data (with read()).
+    /* The functions below read/write labeled labeled (name) data, that are somewhat 
+     * similar to "files", where the file name (data label) AND the start block
+     * must be provided either to read the size of the data (with readSize()) or 
+     * to read/write the whole data.
      * 
      * Duplicate names are allowed on a tag, in different blocks. The pair 
      * "start block" + "label" uniquely identifies your data chunk in a tag.
@@ -98,33 +99,32 @@ public:
      * and initial blocks used when the data were written.
      */
 
-    //TODO: remove the default for initial block?
-    int writeFile(const char fileName[13], byte* data, int dataSize, byte initialBlock=1);
-    inline int writeFile(String fileName, byte* data, int dataSize, byte initialBlock=1) {
+    int writeFile(byte initialBlock, const char fileName[13], byte* data, int dataSize);
+    inline int writeFile(byte initialBlock, String fileName, byte* data, int dataSize) {
         char buffer[13];
         fileName.toCharArray(buffer, 13);
-        return writeFile(buffer, data, dataSize, initialBlock);
+        return writeFile(initialBlock, buffer, data, dataSize);
     }
 
-    int readFile(const char fileName[13], byte* dataOut, int dataOutCapacity, byte initialBlock=1);
-    inline int readFile(String fileName, byte* dataOut, int dataOutCapacity, byte initialBlock=1) {
+    int readFile(byte initialBlock, const char fileName[13], byte* dataOut, int dataOutCapacity);
+    inline int readFile(byte initialBlock, String fileName, byte* dataOut, int dataOutCapacity) {
         char buffer[13];
         fileName.toCharArray(buffer, 13);
-        return readFile(buffer, dataOut, dataOutCapacity, initialBlock);
+        return readFile(initialBlock, buffer, dataOut, dataOutCapacity);
     }
 
-    int readFileSize(const char fileName[13], int initialBlock=1);
-    inline int readFileSize(String fileName, int initialBlock=1) {
+    int readFileSize(int initialBlock, const char fileName[13]);
+    inline int readFileSize(int initialBlock, String fileName) {
         char buffer[13];
         fileName.toCharArray(buffer, 13);
-        return readFileSize(buffer, initialBlock);
+        return readFileSize(initialBlock, buffer);
     }
 
-    inline bool existsFile(const char fileName[13], int initialBlock=1) {
-        return readFileSize(fileName, initialBlock) > 0;
+    inline bool existsFile(int initialBlock, const char fileName[13]) {
+        return readFileSize(initialBlock, fileName) >= 0;
     }
-    inline bool existsFile(String fileName, int initialBlock=1) {
-        return readFileSize(fileName, initialBlock) > 0;
+    inline bool existsFile(int initialBlock, String fileName) {
+        return readFileSize(initialBlock, fileName) >= 0;
     }
 
     /* These member functions don't assign labels to the data, so the size of 
