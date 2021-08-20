@@ -35,9 +35,13 @@ This library is currently a wrapper of [Balboa's library](https://github.com/mig
 
 ## Instalation
 
-On PlatformIO...
+On PlatformIO (PIO): To install in your PIO project: 
+  1. Open your platformio.ini file
+  1. After "lib_deps =", create a new line and add (with some identation) "pablo-sampaio/Easy MFRC522 @ ~0.2.0"
+  1. The library will be automatically downloaded your project, and you may include "Easy MFRC522.h" in any file you want 
+  1. Alternatively: click on the PIO sidebar icon, click on "Libraries", search for "Easy MFRC522", click on "Easy MFRC522 by Pablo Sampaio", click on "Add to Project" and follow the instructions
 
-On Arduino IDE...
+On Arduino IDE: still not available.
 
 ## Restrictions
 
