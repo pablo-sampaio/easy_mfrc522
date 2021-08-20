@@ -189,7 +189,7 @@ int EasyMFRC522::getUserDataSpace(int startBlock) {
  */
 int EasyMFRC522::writeRaw(int initialBlock, byte* data, int dataSize) {
   MFRC522::StatusCode status = MFRC522::STATUS_ERROR;
-  bool success;
+  int statusCode;
 
   int bytesWritten = 0;  
   int currBlock = initialBlock;
@@ -207,8 +207,8 @@ int EasyMFRC522::writeRaw(int initialBlock, byte* data, int dataSize) {
 
     //TODO: adapt to other types of tag
     if (currBlock > 63) {
-      dbgPrint("Error writeToMifareTag() #5: not enough space");
-      return -5;
+      dbgPrint("Error writeRaw(): not enough space");
+      return -220;
     }
 
     if (! sectorAuthenticated) {
@@ -221,8 +221,8 @@ int EasyMFRC522::writeRaw(int initialBlock, byte* data, int dataSize) {
         dbgPrintln(F("    na"));
       }
       if (status != MFRC522::STATUS_OK) {
-        dbgPrint("Error writeToMifareTag() #3: could not authenticate, block "); dbgPrintln(currBlock);
-        return -3;
+        dbgPrint("Error writeRaw(): could not authenticate, block "); dbgPrintln(currBlock);
+        return -221;
       }
       sectorAuthenticated = true;
     }
@@ -230,15 +230,14 @@ int EasyMFRC522::writeRaw(int initialBlock, byte* data, int dataSize) {
     int bytes = dataSize - bytesWritten;
     bytes = (bytes < 16)? bytes : 16;
     for (int i = 0; i < READ_WRITE_TRIALS; i ++) {
-      success = _writeBlockAndVerify(currBlock, data, bytesWritten, bytes);
-      if (success) {
+      statusCode = _writeBlockAndVerify(currBlock, data, bytesWritten, bytes);
+      if (statusCode >= 0) {
         bytesWritten += bytes;
         break;
       }
     }
-    if (!success) {
-      dbgPrint("Error writeToMifareTag() #4: could not write block "); dbgPrintln(currBlock);
-      return -4;
+    if (statusCode < 0) {
+      return -200 + statusCode;
     }
 
     currBlock ++;
@@ -247,13 +246,14 @@ int EasyMFRC522::writeRaw(int initialBlock, byte* data, int dataSize) {
   return currBlock - 1;
 }
 
-bool EasyMFRC522::_writeBlockAndVerify(int blockAddr, byte* data, int startIndex, int bytesToWrite) {
+int EasyMFRC522::_writeBlockAndVerify(int blockAddr, byte* data, int startIndex, int bytesToWrite) {
   MFRC522::StatusCode status;
   if (bytesToWrite == 16) {
     status = device.MIFARE_Write(blockAddr, data + startIndex, 16);
     if (status != MFRC522::STATUS_OK) {
-      dbgPrintln("Error writeBlockAndVerify() #1a: could not write");
-      return false;
+      dbgPrint  ("Error _writeBlockAndVerify(): could not write block ");
+      dbgPrintln(blockAddr);
+      return -5;
     }
 
     return _verifyBlock(blockAddr, data, startIndex, 16); //verifies block written in the tag against the data array (positions 0-16)
@@ -269,43 +269,44 @@ bool EasyMFRC522::_writeBlockAndVerify(int blockAddr, byte* data, int startIndex
     
     status = device.MIFARE_Write(blockAddr, blockBuffer, 16);
     if (status != MFRC522::STATUS_OK) {
-      dbgPrintln("Error writeBlockAndVerify() #1b: could not write");
-      return false;
+      dbgPrint  ("Error _writeBlockAndVerify(): could not write block ");
+      dbgPrintln(blockAddr);
+      return -6;
     }
 
     return _verifyBlock(blockAddr, blockBuffer, 0, bytesToWrite); //verifies block written in the tag against the buffer (positions 0-bytesToWrite)
     
   } else {
-    dbgPrintln("Error writeBlockAndVerify() #2: invalid data size");
-    return false;
+    dbgPrintln("Error _writeBlockAndVerify(): invalid data size");
+    return -7;
     
   }
 }
 
-bool EasyMFRC522::_verifyBlock(int blockAddr, byte* refData, byte startByte, byte bytesToCheck) {
+int EasyMFRC522::_verifyBlock(int blockAddr, byte* refData, byte startByte, byte bytesToCheck) {
   byte bufferSize = 18;
   MFRC522::StatusCode status = device.MIFARE_Read(blockAddr, blockBuffer, &bufferSize);
   if (status != MFRC522::STATUS_OK) {
-      dbgPrintln("Error verifyBlock() #1: could not read");
-      return false;
+      dbgPrintln("Error _verifyBlock(): could not read");
+      return -3;
   }
 
   for (byte i = 0; i < bytesToCheck; i++) {
       if (blockBuffer[i] != refData[startByte + i]) {
-        dbgPrint("Error verifyBlock() #2: verification error in byte: ");
+        dbgPrint("Error _verifyBlock(): verification error in byte: ");
         dbgPrintln(i);
-        return false;
+        return -4;
       }
   }
 
-  return true;
+  return 0;
 } 
 
 /**
  * Reads the data starting in the given initial block, and with the given dataSize, then copies the data to "dataOutput". 
  * Returns the number of bytes read. 
  * 
- * See more details in the comments to writeToMifareTag().
+ * See more details in the comments to writeRaw().
  * 
  * The "dataOutput" must be previously allocated, with enough room ("dataOutputMaxSize") for the data read from the tag.
  * The tag must have been detected and selected by the MFRC522 sensor (e.g. using "detectAndSelectMifareTag()").
@@ -334,8 +335,8 @@ int EasyMFRC522::readRaw(int initialBlock, byte* dataOutput, int dataSize) {
 
     // TODO: adapt to other types of tags - this is specific of Mifare 1k !
     if (currBlock > 63) {
-      dbgPrint("Error readFromMifareTag() #5: end of tag's memory reached");
-      return -5;
+      dbgPrint("Error readRaw(): end of tag's memory reached");
+      return -120;
     }
 
     if (! sectorAuthenticated) {
@@ -349,8 +350,8 @@ int EasyMFRC522::readRaw(int initialBlock, byte* dataOutput, int dataSize) {
         dbgPrintln(F("    na"));
       }
       if (status != MFRC522::STATUS_OK) {
-        dbgPrint("Error readFromMifareTag() #6: could not authenticate block "); dbgPrintln(currBlock);
-        return -6;
+        dbgPrint("Error readRaw(): could not authenticate block "); dbgPrintln(currBlock);
+        return -121;
       }
       sectorAuthenticated = true;
     }
@@ -368,7 +369,7 @@ int EasyMFRC522::readRaw(int initialBlock, byte* dataOutput, int dataSize) {
     }
     if (code < 0) {
       //in this point, a message should have been printed by _readBlock()
-      return -10 + code;
+      return -100 + code;
     }
 
     currBlock ++;
@@ -383,12 +384,12 @@ int EasyMFRC522::_readBlock(int block, byte* destiny, byte firstIndex, byte byte
 
   status = device.MIFARE_Read(block, blockBuffer, &bufferSize);
   if (status != MFRC522::STATUS_OK) {
-    dbgPrint("Error readBlock() #1: could not read block ");  dbgPrintln(block);
+    dbgPrint("Error readBlock(): could not read block ");  dbgPrintln(block);
     return -1;
   }
 
   if (bytesToRead < 0 || bytesToRead > 16) {
-    dbgPrint("Error readBlock() #2: invalid size");
+    dbgPrint("Error readBlock(): invalid size");
     return -2;
   }
 
@@ -396,7 +397,7 @@ int EasyMFRC522::_readBlock(int block, byte* destiny, byte firstIndex, byte byte
     destiny[firstIndex + i] = blockBuffer[i];
   }
 
-  return 1;
+  return 0;
 }
 
 
@@ -420,13 +421,18 @@ int EasyMFRC522::writeFile(byte initialBlock, const char dataLabel[12], byte* da
   blockBuffer[14] = byte(dataSize);
   blockBuffer[15] = byte(dataSize >> 8);
 
-  int lastBlock = this->writeRaw(initialBlock, blockBuffer, 16); // attention: NEVER write less than 16 bytes using the blockBuffer as source (to prevent name aliasing inside writeRaw())
-  if (lastBlock < 0) {
-    //the message should already have been printed by writeMultisector, so just return the error code
-    return lastBlock; 
+  int lastBlockUsed = this->writeRaw(initialBlock, blockBuffer, 16); // attention: NEVER write less than 16 bytes using the blockBuffer as source (to prevent name aliasing inside writeRaw())
+  if (lastBlockUsed < 0) {
+    //the message should already have been printed by writeRaw, so just return the error code
+    return -2000 + lastBlockUsed; // error code (see comment in the end of this file)
   }
 
-  return this->writeRaw(lastBlock+1, data, dataSize);
+  int status = this->writeRaw(lastBlockUsed+1, data, dataSize);
+  if (status < 0) {
+    return -2500 + status;        // error code (see comment in the end of this file)
+  }
+
+  return status;
 }
 
 /**
@@ -451,8 +457,8 @@ int EasyMFRC522::readFileSize(int initialBlock, const char dataLabel[12]) {
     dbgPrintln(F("    na"));
   }
   if (status != MFRC522::STATUS_OK) {
-    dbgPrintln("Error readSizeFromMifareTag() #1: could not authenticate");
-    return -1;
+    dbgPrintln("Error readFileSize(): could not authenticate");
+    return -8;
   }
 
   byte bufferSize = 18;
@@ -463,21 +469,21 @@ int EasyMFRC522::readFileSize(int initialBlock, const char dataLabel[12]) {
     }
   }
   if (status != MFRC522::STATUS_OK) {
-    dbgPrintln("Error readSizeFromMifareTag() #2: could not read");
-    return -2;
+    dbgPrintln("Error readFileSize(): could not read");
+    return -9;
   }
 
   if (blockBuffer[0] != 0x1C) {
-    dbgPrintln("Error #4: this block does not start a file");
-    return -4;
+    dbgPrintln("Error readFileSize(): this block does not start a file");
+    return -10;
   }
   
   // checks if all characters of the data label matches, including the final \0
   // if the label has more than 12 chars, only the first 12 chars are considered
   for (int i = 0; i < 12; i++) {
     if (dataLabel[i] != blockBuffer[i+1]) {
-      dbgPrintln("Error #3: data label doesn't match");
-      return -3;
+      dbgPrintln("Error readFileSize(): data label doesn't match");
+      return -11;
     }
     if (dataLabel[i] == '\0')  //in this situation, we have already confirmed that blockBuffer[i+1] == '\0' in the "if" above
       break;
@@ -490,20 +496,65 @@ int EasyMFRC522::readFileSize(int initialBlock, const char dataLabel[12]) {
 }
 
 int EasyMFRC522::readFile(byte initialBlock, const char dataLabel[12], byte* dataOut, int dataOutCapacity) {
-  if (initialBlock % 4 == 3) { //it is a sector's trailing block --> go to the next (attention: this is done in readSizeFromMifareTag(), but should be kept here too, because of special cases, e.g. initialBlock = 3) and these functions are called successively)
+  if (initialBlock % 4 == 3) { //it is a sector's trailing block --> go to the next (attention: this is done in readFileSize(), but should be kept here too, because of special cases, e.g. initialBlock = 3) and these functions are called successively)
     initialBlock ++;
   }
 
   int dataSize = this->readFileSize(initialBlock, dataLabel);
   if (dataSize < 0) {
-    dbgPrintln("Error in readFromMifareTag() #1/#2/#3: initial block error");
-    return dataSize; //errors -1 to -3
+    return -1000 + dataSize; // error code (see comment in the end of this file)
   } else if ((int)dataOutCapacity < dataSize) {
-    dbgPrintln("Error in readFromMifareTag() #5: not enough room in the given output buffer");
-    return -5;
+    dbgPrintln("Error in readFile(): not enough room in the given output buffer");
+    return -1020;
   }
-
   dbgPrint(" -- data size: "); dbgPrintln(dataSize);
 
-  return this->readRaw(initialBlock+1, dataOut, dataSize);
+  int status = this->readRaw(initialBlock+1, dataOut, dataSize);
+  if (status < 0) { 
+    return -1000 + status; // error code (see comment in the end of this file)
+  }
+
+  return status;
 }
+
+
+/**
+ * -----------
+ * ERROR CODES
+ * -----------
+ * Error codes are negative integers returned by the functions.
+ * 
+ * We show below, what codes each function may return. If you get 
+ * one error code, you can use the information below to identify 
+ * its origin.
+ * 
+ * _readBlock ->
+ * -1 | -2
+ * 
+ * _writeBlockAndVerify ->
+ * -5 | -6 | -7 | _verifyBlock
+ * 
+ * _verifyBlock ->
+ * -3 | -4
+ * 
+ * readFileSize ->
+ * -8 | -9 | -10 | -11
+ * 
+ * readRaw (unlabelled) ->
+ * -120 | -121 | (-100 + _readBlock)
+ * 
+ * writeRaw (unlabelled) ->
+ * -220 | -221 | (-200 + _writeBlockAndVerify) 
+ * 
+ * readFile ->
+ * -1020 | (-1000 + readFileSize) | readRaw
+ * 
+ * writeFile ->
+ * (-2000 + writeRaw) | (-2500 + writeRaw)
+ * 
+ * Because some functions may call others, and one function may be
+ * called in multiple places, we used a combination of values that
+ * prevent producing the same value (when the same function is 
+ * called in different places.) In other words, each value identifies
+ * exactly were, in the code, the error was originated.
+ */

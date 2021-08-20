@@ -5,8 +5,7 @@
 #define CAPACITY_INCREMENT  30   // must be a non-negative even number; when it is necessary to grow, increment by this value
 
 
-RfidDictionaryView::RfidDictionaryView(EasyMFRC522* rfidDevice, int firstBlock, bool autoDeallocateDevice) 
-{
+RfidDictionaryView::RfidDictionaryView(EasyMFRC522* rfidDevice, int firstBlock, bool autoDeallocateDevice) {
   this->device = rfidDevice;
   this->startBlock = firstBlock;
   this->deleteDevice = autoDeallocateDevice;
@@ -20,15 +19,14 @@ RfidDictionaryView::RfidDictionaryView(EasyMFRC522* rfidDevice, int firstBlock, 
 }
 
 RfidDictionaryView::RfidDictionaryView(byte sdaPin, byte resetPin, int startBlock)
-  : RfidDictionaryView(new EasyMFRC522(sdaPin, resetPin), startBlock, true)
+  : RfidDictionaryView(new EasyMFRC522(sdaPin, resetPin), startBlock, true) 
 {
   // calls the other constructor above, creating the EasyMFRC522 instance and
   // enabling the flag to auto delete it in the destructor
   this->device->init(); 
 }
 
-RfidDictionaryView::~RfidDictionaryView() 
-{
+RfidDictionaryView::~RfidDictionaryView() {
   this->loaded = false;
   delete[] this->dictionary;
   if (this->deleteDevice) {
@@ -55,8 +53,7 @@ int RfidDictionaryView::getMaxSpaceInTag() {
  * Ex.: to represent a dictionary with one single entry <"Age" : 20>,
  *      set dictionary[0] = "Age" and dictionary[1] = "20".
  */
-void RfidDictionaryView::_read_dictionary()
-{
+void RfidDictionaryView::_read_dictionary() {
   // reset the dictionary
   for (int i = 0; i < this->capacity; i++) {
     this->dictionary[i] = "";
@@ -118,8 +115,7 @@ void RfidDictionaryView::_read_dictionary()
 }
 
 // Finds the index of a key; assumes the dictionary is loaded.
-int RfidDictionaryView::_dict_find(const String& key) 
-{
+int RfidDictionaryView::_dict_find(const String& key) {
   for (int i = 0; i < this->size; i = i + 2) {
     if (this->dictionary[i].equals(key)) {
       return i;
@@ -129,8 +125,7 @@ int RfidDictionaryView::_dict_find(const String& key)
 }
 
 // Writes the dictionary to the tag; assumes the dictionary is loaded.
-void RfidDictionaryView::_write_dictionary() 
-{
+void RfidDictionaryView::_write_dictionary() {
   String dictString = "";
   int nextEntrySize;
   int spaceForDictInTag = getMaxSpaceInTag();
@@ -163,8 +158,7 @@ void RfidDictionaryView::_write_dictionary()
 
 }
 
-void RfidDictionaryView::_grow_dict() 
-{
+void RfidDictionaryView::_grow_dict() {
   this->capacity += CAPACITY_INCREMENT;
   String* new_dict = new String[this->capacity];
 
@@ -176,8 +170,7 @@ void RfidDictionaryView::_grow_dict()
   this->dictionary = new_dict;
 }
 
-void RfidDictionaryView::_ensure_loaded() 
-{
+void RfidDictionaryView::_ensure_loaded() {
   if (loaded) {
     // checks the uid of the tag
     MFRC522 *mfrc522 = this->device->getMFRC522();
@@ -206,8 +199,7 @@ void RfidDictionaryView::_ensure_loaded()
  * But, once connected with this function, you may do any operations
  * of those classes.
  */
-bool RfidDictionaryView::detectTag(byte outputTagId[4])
-{
+bool RfidDictionaryView::detectTag(byte outputTagId[4]) {
   // try at most twice
   bool tag_detected = this->device->detectTag(outputTagId);
   if (!tag_detected) {
@@ -229,15 +221,13 @@ bool RfidDictionaryView::detectTag(byte outputTagId[4])
  * Known issue: you will need to physically move away (from the RFID reader), 
  * then back again, before connecting another time.
  */
-void RfidDictionaryView::disconnectTag(bool allowRedetection)
-{
+void RfidDictionaryView::disconnectTag(bool allowRedetection) {
   this->device->unselectMifareTag(allowRedetection);
   this->loaded = false;
   this->size = 0;
 }
 
-int RfidDictionaryView::getNumEntries() 
-{
+int RfidDictionaryView::getNumEntries() {
   _ensure_loaded();
   if (! this->loaded) {
     return -1;
@@ -246,8 +236,7 @@ int RfidDictionaryView::getNumEntries()
   return this->size/2;
 }
 
-String RfidDictionaryView::getKey(int key_index) 
-{
+String RfidDictionaryView::getKey(int key_index) {
   _ensure_loaded();
   if (! this->loaded) {
     return "";
@@ -272,8 +261,7 @@ bool RfidDictionaryView::hasKey(const String& dict_key) {
  * In this function you give the key that you want to remove from the dictionary.
  * It will remove the key and its value.
  */
-void RfidDictionaryView::remove(const String& key)
-{
+void RfidDictionaryView::remove(const String& key) {
   _ensure_loaded();
   if (! this->loaded) {
     return ;
@@ -299,8 +287,7 @@ void RfidDictionaryView::remove(const String& key)
  * In this function you give the key and it returns the value associated to that key.
  * If the key does not exist, it will return the empty string "".
  */
-String RfidDictionaryView::get(const String& key)
-{
+String RfidDictionaryView::get(const String& key) {
   _ensure_loaded();
   if (! this->loaded) {
     return "";
@@ -320,8 +307,7 @@ String RfidDictionaryView::get(const String& key)
  * If the key exists, it overwrites the old value with the new one.
  * If it does not exist, the pair <key : value> is added.
  */
-void RfidDictionaryView::set(const String& key, const String& value)
-{
+void RfidDictionaryView::set(const String& key, const String& value) {
   _ensure_loaded();
   if (! this->loaded) {
     return ;

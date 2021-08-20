@@ -51,9 +51,9 @@ private:
 
     byte blockBuffer[18] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    bool _writeBlockAndVerify(int blockAddr, byte* data, int startIndex, int bytesToWrite);
+    int _writeBlockAndVerify(int blockAddr, byte* data, int startIndex, int bytesToWrite);
     int _readBlock(int blockAddr, byte* destiny, byte firstIndex, byte bytesToRead);
-    bool _verifyBlock(int blockAddr, byte* refData, byte startByte, byte bytesToCheck);
+    int _verifyBlock(int blockAddr, byte* refData, byte startByte, byte bytesToCheck);
 
 public:
 

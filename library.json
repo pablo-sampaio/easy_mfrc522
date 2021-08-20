@@ -1,8 +1,8 @@
 {
   "name": "Easy MFRC522",
-  "version": "0.2.0",
+  "version": "0.1.3",
   "keywords": "rfid, spi",
-  "description": "This library controls a MFRC522 module, allowing you to read/write RFID tags' contents in a simplified way: (1) to load/store data chunks identified by labels (like a simple file system), or (2) as a dictionary with key/values pairs. It is a higher-level wrapper to the great library miguelbalboa/MFRC522.",
+  "description": "Library to operate a MFRC522 module, allowing you to read/write RFID tags' contents easily. Three ways of reading/writing data: (1) as binary data chunks of any fixed/known size; (2) as binary data chunks identified by labels, with lengths possibly unknown at read-time, or (3) as a dictionary with key/values pairs. This is a higher-level wrapper to the great library miguelbalboa/MFRC522.",
   "repository":
   {
     "type": "git",
@@ -66,6 +66,7 @@
   },
   "frameworks": "arduino",
   "platforms": ["atmelavr", "atmelsam", "espressif8266", "espressif32"],
+  "license": "LGPL-3.0-only",
   "export": {
     "exclude": [
       "docs/",  

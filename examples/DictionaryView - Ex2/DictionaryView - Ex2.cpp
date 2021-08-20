@@ -29,7 +29,7 @@
   * --------------------------------------------------------------------------
   */
 
-int startBlock = 18;  // you may choose any block; choose #1 to have maximum storage availabel for the dictionary
+int startBlock = 18;  // you may choose any block; choose #1 to have maximum storage available for the dictionary
 RfidDictionaryView rfidDict(D4, D3, startBlock); // parameters: ports for SDA and RST pins, and initial block in the RFID tag
 bool tagSelected = false;
 
@@ -59,9 +59,8 @@ void loop() {
       delay(5);
     } while (!tagSelected);
 
-    Serial.printf ("- TAG DETECTED, ID = %02X %02X %02X %02X \n\n", tagId[0], tagId[1], tagId[2], tagId[3]);
-    Serial.print  ("- space available for dictionary: ");
-    Serial.println(rfidDict.getMaxSpaceInTag());
+    Serial.printf("- TAG DETECTED, ID = %02X %02X %02X %02X \n", tagId[0], tagId[1], tagId[2], tagId[3]);
+    Serial.printf("  space available for dictionary: %d bytes.\n\n", rfidDict.getMaxSpaceInTag());
   }
 
   Serial.println("========================="); 
