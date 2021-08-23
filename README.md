@@ -35,27 +35,35 @@ This library is currently a wrapper of [Balboa's library](https://github.com/mig
 
 ## Instalation
 
-On PlatformIO (PIO): To install in your PIO project: 
+On *PlatformIO (PIO)*: To install in your PIO project: 
   1. Open your platformio.ini file
-  1. After "lib_deps =", create a new line and add (with some identation) "pablo-sampaio/Easy MFRC522 @ ~0.2.0"
+  1. After the field "lib_deps =", create a new line and add (with some identation) "pablo-sampaio/Easy MFRC522 @ ~0.2.0"
   1. The library will be automatically downloaded your project, and you may include "Easy MFRC522.h" in any file you want 
-  1. Alternatively: click on the PIO sidebar icon, click on "Libraries", search for "Easy MFRC522", click on "Easy MFRC522 by Pablo Sampaio", click on "Add to Project" and follow the instructions
 
-On Arduino IDE: still not available.
+(Alternatively: click on the PIO sidebar icon, click on "Libraries", search for "Easy MFRC522", click on "Easy MFRC522 by Pablo Sampaio", click on "Add to Project" and then follow the instructions.)
 
-## Restrictions
+On *Arduino IDE*: 
+  1. Click on "Sketch" menu, then choose "Include Library" -> "Manage Libraries". 
+  1. The "Library Manager" will open. Then search for "Easy MFRC522".
+  1. Then click on "Install".
 
-The simplifications adopted and the lack of time, made this library restricted in these ways:
+## Limitations
+
+Due to the simplifications adopted (and to the lack of time and resources), this library has some limitations:
 
 * It only supports RFID cards of [Mifare Classic](https://en.wikipedia.org/wiki/MIFARE) family (mini, 1K and 4K)
 * It offers only basic read/write operations (but you may access the wrapped Balboa's class to do other operations)
 * All blocks are accessed only in transport mode, and using only Key A for read/write operations
 * The same key A must be used by all blocks on which you do a read/write operation
 
-**Attention 1**: *This is not a comprehensive library for using MFRC522*. If you need just that, check out [Balboa's library](https://github.com/miguelbalboa/rfid). This library is currently a wrapper of Balboa's.
+**Attention 1**: *This is not a library with comprehensive functionality for using MFRC522*. If you need just that, check out [Balboa's library](https://github.com/miguelbalboa/rfid). This library is currently a wrapper of Balboa's, so you can access Balboa's class and use all its functionality.
 
 **Attention 2**: *Tested only with Mifare 1k tags!*
 
  ## Licensing
 
  Currently licensed under LGPGL.
+
+## Acknowledgements
+
+Thanks to _Vinicius Barbosa Polito_ who contributed to an earlier project that would become the RfidDictionaryView class.

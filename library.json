@@ -1,12 +1,12 @@
 {
   "name": "Easy MFRC522",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "keywords": "rfid, spi",
   "description": "Library to operate a MFRC522 module, allowing you to read/write RFID tags' contents easily. Three ways of reading/writing data: (1) as binary data chunks of any fixed/known size; (2) as binary data chunks identified by labels, with lengths possibly unknown at read-time, or (3) as a dictionary with key/values pairs. This is a higher-level wrapper to the great library miguelbalboa/MFRC522.",
   "repository":
   {
     "type": "git",
-    "url": "https://github.com/pablo-sampaio/easy_mfrc522.git"
+    "url": "https://github.com/pablo-sampaio/easy_mfrc522"
   },
   "authors":
   [
@@ -20,58 +20,65 @@
   "examples": [
     {
         "name": "DictionaryView - Example 1",
-        "base": "examples/DictionaryView - Ex1",
+        "base": "examples/DictionaryView-Ex1",
         "files": [
-            "DictionaryView - Ex1.cpp"
+            "DictionaryView-Ex1.ino"
         ]
     },
     {
       "name": "DictionaryView - Example 2",
-      "base": "examples/DictionaryView - Ex2",
+      "base": "examples/DictionaryView-Ex2",
       "files": [
-        "DictionaryView - Ex2.cpp"
+        "DictionaryView-Ex2.ino"
       ]
     },
     {
       "name": "Labeled Data - Example 1",
-      "base": "examples/Labeled Data - Ex1",
+      "base": "examples/LabeledData-Ex1",
       "files": [
-        "Labeled Data - Ex1.cpp"
+        "LabeledData-Ex1.ino"
       ]
     },
     {
       "name": "Labeled Data - Example 2",
-      "base": "examples/Labeled Data - Ex2",
+      "base": "examples/LabeledData-Ex2",
       "files": [
-        "Labeled Data - Ex2.cpp"
+        "LabeledData-Ex2.ino"
       ]
     },
     {
       "name": "Unlabeled Data - Example 1",
-      "base": "examples/Unlabeled Data - Ex1",
+      "base": "examples/UnlabeledData-Ex1",
       "files": [
-        "Unlabeled Data - Ex1.cpp"
+        "UnlabeledData-Ex1.ino"
       ]
     },
     {
       "name": "Unlabeled Data - Example 2",
-      "base": "examples/Unlabeled Data - Ex2",
+      "base": "examples/UnlabeledData-Ex2",
       "files": [
-        "Unlabeled Data - Ex2.cpp"
+        "UnlabeledData-Ex2.ino"
       ]
     }
   ],
+  "build" : {
+    "includeDir": "src",
+    "srcDir": "src",
+    "srcFilter": "+<*.cpp>"
+  },
   "dependencies": {
     "miguelbalboa/MFRC522": "~1.4.8"
   },
   "frameworks": "arduino",
-  "platforms": ["atmelavr", "atmelsam", "espressif8266", "espressif32"],
+  "platforms": ["atmelavr", "atmelsam", "espressif8266", "espressif32", "ststm32", "samd"],
   "license": "LGPL-3.0-only",
   "export": {
     "exclude": [
       "docs/",  
       "andamento.txt",
-      ".gitignore"
+      ".gitignore",
+      "library.properties",
+      "README.md"
     ]
   }
 }
