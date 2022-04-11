@@ -38,6 +38,10 @@
 EasyMFRC522 rfidReader(D4, D3); //the MFRC522 reader, with the SDA and RST pins given
                                 //the default (factory) keys A and B are used (or used setKeys to change)
 
+// printf-style function for serial output
+void printfSerial(const char *fmt, ...);
+
+
 void setup() {
   Serial.begin(9600);
   Serial.setTimeout(20000); // to wait for up to 20s in "read" functions
@@ -61,7 +65,7 @@ void loop() {
     success = rfidReader.detectTag(tagId);
     delay(50); //0.05s
   } while (!success);
-  Serial.printf("--> TAG DETECTED, ID = %02X %02X %02X %02X \n\n", tagId[0], tagId[1], tagId[2], tagId[3]);
+  printfSerial("--> TAG DETECTED, ID = %02X %02X %02X %02X \n\n", tagId[0], tagId[1], tagId[2], tagId[3]);
 
   Serial.println("====== TAG'S CONTENT (user space )======\n");
   
@@ -70,13 +74,13 @@ void loop() {
 
   for (int block = 0; block < 64; block +=4) {
     delay(1000); //1s
-    Serial.printf("SECTOR %02d:\n", block/4);
+    printfSerial("SECTOR %02d:\n", block/4);
 
     // reads the next three blocks (corresponds to all space for user data in the sector, except for block #0)
     result = rfidReader.readRaw(block, buffer, 3*16);
     
     if (result < 0) {
-      Serial.printf("--> Error: %d.\n\n", result);
+      printfSerial("--> Error: %d.\n\n", result);
       continue;
     }
 
@@ -88,30 +92,30 @@ void loop() {
     bufferIndex = 0;
 
     for (b = 0; b < 3; b++) {
-      Serial.printf(" [%02d]  ", block+b);
+      printfSerial(" [%02d]  ", block+b);
       
       // test if a labeled data may be present: blocks that begin with "0x1C + twelve-length string"
       if (buffer[bufferIndex] == 0x1C) {
         for (int k = 0; k < 12; k++) {
           dataLabel[k] = buffer[bufferIndex+k+1];
         }          
-        Serial.printf("may start a data chunk labeled \"%s\" \n", dataLabel);
-        Serial.printf("       ");
+        printfSerial("may start a data chunk labeled \"%s\" \n", dataLabel);
+        printfSerial("       ");
       }
 
       // loop the 16 bytes of the block, printing them
       for (int i = 0; i < 16; i++) {
-        Serial.printf("%02X ", buffer[bufferIndex]);
+        printfSerial("%02X ", buffer[bufferIndex]);
         bufferIndex ++;
       }
       Serial.println(); //end of block
     }
-    Serial.printf(" [%02d]  reserved\n\n", block+b);
+    printfSerial(" [%02d]  reserved\n\n", block+b);
     //Serial.println(); //end of sector
   } 
 
   // Code below shows how to access Balboa's MFRC522 object, to use its functions
-  // I used the dumping operations below for debugging
+  // I used its dumping operation below, for debugging
   //MFRC522* device = rfidReader.getMFRC522();
   //device->PICC_DumpMifareClassicSectorToSerial(&(device->uid), rfidReader.getKey(), 0); // dump sector #0
   //device->PICC_DumpMifareClassicSectorToSerial(&(device->uid), rfidReader.getKey(), 1); // dump sector #1
@@ -122,4 +126,18 @@ void loop() {
   Serial.println("Finished!");
   Serial.println();
   delay(5000);
+}
+
+
+/**
+ * this function is a substitute  toSerial.printf() function, which was used in the 
+ * first versions of this library, but seems to be unavailable for some operating systems.
+ */
+void printfSerial(const char *fmt, ...) {
+  char buf[128];
+  va_list args;
+  va_start(args, fmt);
+  vsnprintf(buf, sizeof(buf), fmt, args);
+  va_end(args);
+  Serial.print(buf);
 }

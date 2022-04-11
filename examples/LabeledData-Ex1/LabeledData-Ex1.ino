@@ -38,11 +38,15 @@
  * --------------------------------------------------------------------------
  */
 
+#define MAX_STRING_SIZE 100  // size of the char array that will be written to the tag
+#define BLOCK 1              // initial block, from where the data will be stored in the tag
+
 EasyMFRC522 rfidReader(D4, D3); //the Mifare sensor, with the SDA and RST pins given
                                 //the default (factory) keys A and B are used (or used setKeys to change)
 
-#define MAX_STRING_SIZE 100  // size of the char array that will be written to the tag
-#define BLOCK 1              // initial block, from where the data will be stored in the tag
+// printf-style function for serial output
+void printfSerial(const char *fmt, ...);
+
 
 /** 
  * In the Arduino framework, this function is called once to initialize whatever you need.
@@ -97,9 +101,9 @@ void loop() {
     result = rfidReader.writeFile(BLOCK, "mylabel", (byte*)stringBuffer, stringSize+1);
 
     if (result >= 0) {
-      Serial.printf("--> Successfully written \"%s\" to the tag, ending in block %d\n", stringBuffer, result);
+      printfSerial("--> Successfully written \"%s\" to the tag, ending in block %d\n", stringBuffer, result);
     } else {
-      Serial.printf("--> Error writing to the tag: %d\n", result);
+      printfSerial("--> Error writing to the tag: %d\n", result);
     }
   
   } else if (option == 's') {
@@ -107,9 +111,9 @@ void loop() {
     result = rfidReader.readFileSize(BLOCK, "mylabel");
 
     if (result >= 0) {
-      Serial.printf("--> Size of data chunk found in the tag: %d bytes\n", result);
+      printfSerial("--> Size of data chunk found in the tag: %d bytes\n", result);
     } else { 
-      Serial.printf("--> Error reading the tag (%d)! Probably there is no data with the given label in the given block.\n", result);
+      printfSerial("--> Error reading the tag (%d)! Probably there is no data with the given label in the given block.\n", result);
     }
   
   } else if (option == 'r') {
@@ -120,9 +124,9 @@ void loop() {
                                            // (would not happen in this example, but it is a good practice when reading strings) 
 
     if (result >= 0) { // non-negative values indicate success, while negative ones indicate error
-      Serial.printf("--> String data retrieved: \"%s\" (bytes: %d)\n", stringBuffer, result);
+      printfSerial("--> String data retrieved: \"%s\" (bytes: %d)\n", stringBuffer, result);
     } else { 
-      Serial.printf("--> Error reading the tag (%d)! Probably there is no data labeled \"mylabel\".\n", result);
+      printfSerial("--> Error reading the tag (%d)! Probably there is no data labeled \"mylabel\".\n", result);
     }
 
   }
@@ -140,3 +144,16 @@ void loop() {
   delay(3000);
 }
 
+
+/**
+ * this function is a substitute  toSerial.printf() function, which was used in the 
+ * first versions of this library, but seems to be unavailable for some operating systems.
+ */
+void printfSerial(const char *fmt, ...) {
+  char buf[128];
+  va_list args;
+  va_start(args, fmt);
+  vsnprintf(buf, sizeof(buf), fmt, args);
+  va_end(args);
+  Serial.print(buf);
+}

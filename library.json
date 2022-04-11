@@ -1,6 +1,6 @@
 {
   "name": "Easy MFRC522",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "keywords": "rfid, spi",
   "description": "Library to operate a MFRC522 module, allowing you to read/write RFID tags' contents easily. Three ways of reading/writing data: (1) as binary data chunks of any fixed/known size; (2) as binary data chunks identified by labels, with lengths possibly unknown at read-time, or (3) as a dictionary with key/values pairs. This is a higher-level wrapper to the great library miguelbalboa/MFRC522.",
   "repository":
@@ -78,7 +78,9 @@
       "andamento.txt",
       ".gitignore",
       "library.properties",
-      "README.md"
+      "README.md",
+      "platformio.ini",
+      "rfid-lib.code-workspace"
     ]
   }
 }

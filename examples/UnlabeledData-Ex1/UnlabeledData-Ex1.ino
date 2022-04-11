@@ -47,6 +47,8 @@ struct GateAccessCredentials {
   int expireMinute;
 };
 
+void printGateAccessCredentials(GateAccessCredentials *credentials); //auxiliary function, defined in the end of the file
+
 
 void setup() {
   Serial.begin(9600);
@@ -77,7 +79,7 @@ void loop() {
   bool success;
   do {
     // returns true if a Mifare tag is detected
-    success = rfidReader.detectAndSelectMifareTag();
+    success = rfidReader.detectTag();
     delay(50); //0.05s
   } while (!success);
 
@@ -86,7 +88,8 @@ void loop() {
 
   if (option == 'g') {
     Serial.println("GRANTING access:");
-    GateAccessCredentials credentials = {"Pablo Sampaio", "Gate H2", 00, 00}; // to grant access to Gate H2 until a random hour
+    // to simulate that access was granted to Gate H2, with a random expire time
+    GateAccessCredentials credentials = {"Pablo Sampaio", "Gate H2", 00, 00}; 
     credentials.expireHour = random(0, 24);
     credentials.expireMinute = random(0, 60);
     
@@ -94,9 +97,11 @@ void loop() {
     result = rfidReader.writeRaw(BLOCK, (byte*)&credentials, sizeof(GateAccessCredentials));
 
     if (result >= 0) {
-      Serial.printf("--> Credentials written to the tag, ending in block %d\n", result);
+      Serial.print  ("--> Credentials written to the tag, ending in block ");
+      Serial.println(result);
     } else {
-      Serial.printf("--> Error writing to the tag: %d\n", result);
+      Serial.print  ("--> Error writing to the tag: ");
+      Serial.println(result);
     }
   
   } else if (option == 'r') {
@@ -108,11 +113,10 @@ void loop() {
     result = rfidReader.readRaw(BLOCK, (byte*)&credentials, sizeof(GateAccessCredentials));
 
     if (result >= 0) {
-      Serial.printf ("   - Name: %s\n", credentials.personName);
-      Serial.printf ("   - Gate: %s\n", credentials.gateId);
-      Serial.printf ("   - Expiration time: %d:%02d\n", credentials.expireHour, credentials.expireMinute);
+      printGateAccessCredentials(&credentials);
     } else { 
-      Serial.printf("--> Error reading the tag (%d)!\n", result);
+      Serial.print("--> Error reading the tag, got");
+      Serial.println(result);
     }
 
   } else if (option == 'd') {
@@ -136,3 +140,20 @@ void loop() {
   delay(3000);
 }
 
+// auxiliary function to print the contents of a GateAccessCredentials struct
+void printGateAccessCredentials(GateAccessCredentials *credentials) {
+  Serial.print("   - Name: "); 
+  Serial.println(credentials->personName);
+
+  Serial.print("   - Gate: "); 
+  Serial.println(credentials->gateId);
+
+  Serial.print("   - Expiration time: ");
+  Serial.print(credentials->expireHour);
+  if (credentials->expireMinute < 10) {
+    Serial.print(":0");
+  } else {
+    Serial.print(":");
+  }
+  Serial.println(credentials->expireMinute);
+}

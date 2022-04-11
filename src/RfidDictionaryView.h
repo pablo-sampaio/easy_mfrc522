@@ -50,7 +50,7 @@ private:
 public:
 
     RfidDictionaryView(byte sdaPin, byte resetPin, int startBlock = 1);
-    RfidDictionaryView(EasyMFRC522* rfidDevice, int startBlock = 1, boolean autoDeallocateDevice = false);
+    RfidDictionaryView(EasyMFRC522* rfidDevice, int startBlock = 1, bool autoDeallocateDevice = false);
     virtual ~RfidDictionaryView();
 
     bool detectTag(byte outputTagId[4] = NULL);

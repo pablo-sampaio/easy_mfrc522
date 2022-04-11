@@ -5,9 +5,9 @@
 #define CAPACITY_INCREMENT  30   // must be a non-negative even number; when it is necessary to grow, increment by this value
 
 
-RfidDictionaryView::RfidDictionaryView(EasyMFRC522* rfidDevice, int firstBlock, bool autoDeallocateDevice) {
+RfidDictionaryView::RfidDictionaryView(EasyMFRC522* rfidDevice, int startBlock, bool autoDeallocateDevice) {
   this->device = rfidDevice;
-  this->startBlock = firstBlock;
+  this->startBlock = startBlock;
   this->deleteDevice = autoDeallocateDevice;
   this->capacity = INITIAL_CAPACITY;
   this->dictionary = new String[INITIAL_CAPACITY];
@@ -80,7 +80,8 @@ void RfidDictionaryView::_read_dictionary() {
   int result = this->device->readFile(this->startBlock, "_rfiddict_", buffer, spaceForDictInTag);
   
   if (result < 0) {
-    Serial.printf("Error: when reading the RFID tag, got %d\n", result);
+    Serial.print  ("Error: when reading the RFID tag, got ");
+    Serial.println(result);
     this->loaded = false;
     delete[] buffer;
     return;
@@ -153,7 +154,8 @@ void RfidDictionaryView::_write_dictionary() {
 
   if (result <= 0) {
     this->loaded = false;
-    Serial.printf("Error: Could not write to the tag: %d\n", result);
+    Serial.print  ("Error: Could not write to the tag, got ");
+    Serial.println(result);
   }
 
 }
@@ -243,7 +245,8 @@ String RfidDictionaryView::getKey(int key_index) {
   }
 
   if (2*key_index >= this->size) {
-    Serial.printf("Error: invalid index %d\n", key_index);
+    Serial.print   ("Error: invalid index ");
+    Serial.println(key_index);
     return "";
   }
   return dictionary[2*key_index];

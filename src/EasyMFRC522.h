@@ -144,6 +144,10 @@ public:
 
 };
 
+
+// Just to make ir easier for the user. 
+// He/she will only need to include one header to use any of the classes.
 #include "RfidDictionaryView.h"
+
 
 #endif

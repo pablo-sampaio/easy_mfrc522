@@ -29,9 +29,13 @@
   * --------------------------------------------------------------------------
   */
 
-int startBlock = 18;  // you may choose any block; choose #1 to have maximum storage available for the dictionary
-RfidDictionaryView rfidDict(D4, D3, startBlock); // parameters: ports for SDA and RST pins, and initial block in the RFID tag
+#define START_BLOCK   18  // you may choose any block; choose '1' for maximum storage for the dictionary
+
+RfidDictionaryView rfidDict(D4, D3, START_BLOCK); // parameters: ports for SDA and RST pins, and initial block in the RFID tag
 bool tagSelected = false;
+
+// printf-style function for serial output
+void printfSerial(const char *fmt, ...);
 
 
 void setup() {
@@ -59,8 +63,8 @@ void loop() {
       delay(5);
     } while (!tagSelected);
 
-    Serial.printf("- TAG DETECTED, ID = %02X %02X %02X %02X \n", tagId[0], tagId[1], tagId[2], tagId[3]);
-    Serial.printf("  space available for dictionary: %d bytes.\n\n", rfidDict.getMaxSpaceInTag());
+    printfSerial("- TAG DETECTED, ID = %02X %02X %02X %02X \n", tagId[0], tagId[1], tagId[2], tagId[3]);
+    printfSerial("  space available for dictionary: %d bytes.\n\n", rfidDict.getMaxSpaceInTag());
   }
 
   Serial.println("========================="); 
@@ -161,4 +165,18 @@ void loop() {
   Serial.println("Finished operation!");
   Serial.println();
   delay(2000);
+}
+
+
+/**
+ * this function is a substitute  toSerial.printf() function, which was used in the 
+ * first versions of this library, but seems to be unavailable for some operating systems.
+ */
+void printfSerial(const char *fmt, ...) {
+  char buf[128];
+  va_list args;
+  va_start(args, fmt);
+  vsnprintf(buf, sizeof(buf), fmt, args);
+  va_end(args);
+  Serial.print(buf);
 }

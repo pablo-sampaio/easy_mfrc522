@@ -47,6 +47,9 @@
 EasyMFRC522 rfidReader(D4, D3); //the Mifare sensor, with the SDA and RST pins given
                                 //the default (factory) keys A and B are used (or used setKeys to change)
 
+// printf-style function for serial output
+void printfSerial(const char *fmt, ...);
+
 // this struct represents an entry in the access history 
 // with the time and gate where a RFID tag was used
 struct AccessRecord {
@@ -108,16 +111,16 @@ void loop() {
     result = rfidReader.readFile(BLOCK, "history", (byte*)history, sizeof(AccessRecord)*HISTORY_MAX_SIZE);
     if (result >= 0) {
       historySize = result / sizeof(AccessRecord);
-      Serial.printf("--> Success: %d entries, %d bytes\n\n", historySize, result);
+      printfSerial("--> Success: %d entries, %d bytes\n\n", historySize, result);
     
     } else {
-      Serial.printf("--> Error: %d\n\n", result);
+      printfSerial("--> Error: %d\n\n", result);
       historySize = -1;  // history was not loaded
 
     }
   
   } else {
-    Serial.printf("--> Tag seems to have no access history data. Try resetting the history.\n\n");
+    printfSerial("--> Tag seems to have no access history data. Try resetting the history.\n\n");
     historySize = -1;  // history was not loaded
 
   }
@@ -126,11 +129,11 @@ void loop() {
   // two of them require the history properly loaded (so historySize != -1)
 
   if (isAlpha(option) && historySize != -1) {
-    Serial.printf("STORING (in the tag) an access record to gate %c:\n", toupper(option));
+    printfSerial("STORING (in the tag) an access record to gate %c:\n", toupper(option));
     AccessRecord access;
     access.gate = toupper(option);
     access.time = millis();
-    Serial.printf("--> New access record: time=%ld, gate=%c\n", access.time, access.gate);
+    printfSerial("--> New access record: time=%ld, gate=%c\n", access.time, access.gate);
 
     if (historySize >= HISTORY_MAX_SIZE) {
       // discards the first record, by shifting all the records one position to the left
@@ -147,9 +150,9 @@ void loop() {
     result = rfidReader.writeFile(BLOCK, "history", (byte*)history, sizeof(AccessRecord)*historySize);
 
     if (result > 0) {
-      Serial.printf("--> Stored with success: %d entries in total\n\n", historySize); 
+      printfSerial("--> Stored with success: %d entries in total\n\n", historySize); 
     } else {
-      Serial.printf("--> Error: %d\n\n", result);
+      printfSerial("--> Error: %d\n\n", result);
     }
   
   } else if (option == '0') {
@@ -159,16 +162,16 @@ void loop() {
     result = rfidReader.writeFile(BLOCK, "history", (byte*)history, 0);
 
     if (result > 0) {
-      Serial.printf("--> Reset done with success: 0 entries\n\n"); 
+      printfSerial("--> Reset done with success: 0 entries\n\n"); 
       historySize = 0;
     } else {
-      Serial.printf("--> Error: %d\n\n", result);
+      printfSerial("--> Error: %d\n\n", result);
     }
 
   } else if (option == '1' && historySize != -1) {
     Serial.println("ACCESS HISTORY (all records):");
     for (int i = 0; i < historySize; i ++) {
-      Serial.printf(" | %02d: time %ld, gate %c\n", i, history[i].time, history[i].gate);
+      printfSerial(" | %02d: time %ld, gate %c\n", i, history[i].time, history[i].gate);
     }
     Serial.println(" -------\n");
   }
@@ -182,4 +185,18 @@ void loop() {
   
   Serial.println("Finished operation!\n");
   delay(3000);
+}
+
+
+/**
+ * this function is a substitute  toSerial.printf() function, which was used in the 
+ * first versions of this library, but seems to be unavailable for some operating systems.
+ */
+void printfSerial(const char *fmt, ...) {
+  char buf[128];
+  va_list args;
+  va_start(args, fmt);
+  vsnprintf(buf, sizeof(buf), fmt, args);
+  va_end(args);
+  Serial.print(buf);
 }
